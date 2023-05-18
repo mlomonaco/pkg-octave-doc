@@ -94,9 +94,12 @@
 
 function [varargout] = package_texi2html (pkgname)
 
-  if (! ischar (pkgname))
+  if (! ischar (pkgname) && !isstruct(pkgname))
     print_usage ();
   endif
+  
+  # MLM did this
+  isPackage = ischar(pkgname);
 
   if (nargout != 0 && nargout != 2)
     print_usage ();
@@ -104,13 +107,19 @@ function [varargout] = package_texi2html (pkgname)
 
   ## Check package exists and it is loaded
   pkg_loaded = 0;
-  [desc, flag] = pkg ("describe", pkgname);
-  if (strcmp (flag{:}, "Not installed"))
-    error ("package_texi2html: %s package is not installed.", pkgname);
-  elseif (strcmp (flag{:}, "Not loaded"))
-    pkg ("load", pkgname);
+
+  if isPackage
     [desc, flag] = pkg ("describe", pkgname);
-    pkg_loaded = 1;
+    if (strcmp (flag{:}, "Not installed"))
+      error ("package_texi2html: %s package is not installed.", pkgname);
+    elseif (strcmp (flag{:}, "Not loaded"))
+      pkg ("load", pkgname);
+      [desc, flag] = pkg ("describe", pkgname);
+      pkg_loaded = 1;
+    endif
+  else
+    # MLM did this
+    desc = pkgname.desc;
   endif
 
   ## Get categories of functions available
@@ -132,7 +141,13 @@ function [varargout] = package_texi2html (pkgname)
   endfor
 
   ## Get package info
-  pkg_info = pkg ("list", pkgname);
+  if isPackage
+    pkg_info = pkg ("list", pkgname);
+  else
+    # MLM did this
+    pkg_info = pkgname.pkg_info;
+    pkgname = pkgname.name;
+  endif
   pkg_ver = pkg_info{1}.version;
   pkg_date = pkg_info{1}.date;
   pkg_title = pkg_info{1}.title;
@@ -215,8 +230,8 @@ function [varargout] = package_texi2html (pkgname)
       error (strcat (["package_texi2html: cannot copy default package"], ...
                      sprintf (" logo to %s directory.", asset)));
     endif
-    old_name = fullfile ("assets", "pkg.png");
-    new_name = fullfile ("assets", pkg_icon);
+    old_name = fullfile (asset, "pkg.png");
+    new_name = fullfile (asset, pkg_icon);
     [err, msg] = rename (old_name, new_name);
     if (err)
       error ("package_texi2html: cannot rename pkg.png file.");

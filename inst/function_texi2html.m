@@ -57,7 +57,7 @@
 ## @code{package_texi2html}.
 ##
 ## @code{function_texi2html} depends on the @qcode{texi2html} command line tool
-## version 1.82, which must be installed and available on the system's $PATH,
+## version 5.0, which must be installed and available on the system's $PATH,
 ## and the generated HTML code is based on the @qcode{function_template.html}
 ## and @qcode{default.html} layouts.
 ##
@@ -150,12 +150,17 @@ function function_texi2html (fcnname, pkgfcns, info)
       endfor
     endif
 
-    ## Check that 'texi2html' exists in system's PATH
+    ## Check that 'texi2html' exists in system's PATH    
     [status, msg] = unix ("texi2html --version");
     if (status)
       error ("function_texi2html: 'texi2html' command-line tool is missing.");
+%{  
+    ## MLM stripped this
     elseif (! strcmp (strtrim (msg), "1.82"))
       error ("function_texi2html: 'texi2html' version must be exactly 1.82.");
+%}
+    elseif (! strcmp (strtrim (msg), "5.0"))
+      error ("function_texi2html: 'texi2html' version must be exactly 5.0");
     endif
 
     ## Fix texi tags that 'texi2html' cannot process or generates error
@@ -172,7 +177,8 @@ function function_texi2html (fcnname, pkgfcns, info)
     fprintf (fid, "%s", text);
     fclose (fid);
 
-    [status, ~] = unix (sprintf ("texi2html %s > /dev/null 2>&1", fcnfile));
+    [status, ~] = unix (sprintf ("texi2html %s > /dev/null 2>&1", fcnfile)); # MLM, ignore the "Unescaped left brace in regex is deprecated here" issued by perl. It's a known issue for texi2html 5
+#    [status, ~] = unix (sprintf ("makeinfo --html %s > /dev/null 2>&1", fcnfile)); # MLM, I tried :(
     if (status)
       error ("function_texi2html: unable to convert to html.");
     endif
@@ -182,10 +188,14 @@ function function_texi2html (fcnname, pkgfcns, info)
     fcn_text = fscanf (fid, "%c", Inf);
     fclose (fid);
     delete (fcnfile, [fcnfile ".html"]);
+    ## MLM added this
+    ## delete (fcnfile);
+    ## rename([fcnfile ".html"], [fcnfile ".texinfo.html"]); # MLM, for debug and inspecting the converted html by texi2html
 
     ## Remove content before <body> tag and after <hr size="1">
     txt_beg = strfind (fcn_text, "<body ");
-    txt_end = strfind (fcn_text, "<hr size=""1"">") - 1;
+#    txt_end = strfind (fcn_text, "<hr size=""1"">") - 1; # this was for texi2html 1.82
+    txt_end = strfind (fcn_text, "<font size=\"-1\">") - 1;
     fcn_text = fcn_text([txt_beg:txt_end]);
 
     ## Remove <body *> tag
@@ -196,22 +206,37 @@ function function_texi2html (fcnname, pkgfcns, info)
     dta_idx = strfind (fcn_text, "<dt><a name=""");
     dt_aidx = strfind (fcn_text, "</a>");
     for i = numel (dta_idx):-1:1
-      fcn_text([dta_idx(i)+5:dt_aidx(i)+4]) = [];
+      fcn_text([dta_idx(i)+4:dt_aidx(i)+3]) = [];
     endfor
 
-    ## Fix </dd></dl> positions and add left margin after 1st sentence
-    fcn_text = strrep (fcn_text, "<dd>", "</dl>\n");
+    ## close the first descriptive list for the @deffntype by replacing <dd> with a </dl>. This creates a needed line break.
+    dd_idx = strfind(fcn_text, "<dd>")(1);
+    fcn_text = [fcn_text(1 : (dd_idx - 1)) "</dl>" fcn_text(dd_idx + 4 : end)];
+    
+    ## fix the indenting of each descriptive list
+    fcn_text = strrep (fcn_text, "<dl compact=""compact"">", "<dl compact=""compact"" class=""ms-5"">");
+%{  
+    ## MLM stripped this
     pbeg_idx = strfind (fcn_text, "<p>");
     pend_idx = strfind (fcn_text, "</p>");
     tmp_str1 = fcn_text([pbeg_idx(1):pend_idx(1)+4]);
     fcn_text = strrep (fcn_text, tmp_str1, [tmp_str1, "<div class=""ms-5"">\n"]);
+%}
+    # replace times and dot symbols from unicode since texi2html is not doing it even by enabling encoding
+    fcn_text = strrep (fcn_text, "@U{00D7}", "&times;");
+    fcn_text = strrep (fcn_text, "@U{22C5}", "&sdot;");
 
+%{  
+    ## MLM stripped this
+    ## *** This code seems to be ill-formed, since it messes up the actual @math and possibily its containing x vars ***
     ## Replace <em> and </em> tags with <math> and </math>, respectively.
     ## Evaluate each case whether it conforms to size dimensions and replace
     ## 'x' or '*' with '&times;'.
     ## alphanumeric chars
     fcn_text = strrep (fcn_text, "<em>", "<math>");
     fcn_text = strrep (fcn_text, "</em>", "</math>");
+%}
+    # kept for future reference, but actually never used (<math> is not added by texi2html)
     math_beg = strfind (fcn_text, "<math>") + 6;
     math_end = strfind (fcn_text, "</math>") - 1;
     if (! isempty (math_beg) && ! isempty (math_end))
