@@ -1,4 +1,5 @@
 ## Copyright (C) 2023 Andreas Bertsatos <abertsatos@biol.uoa.gr>
+## Copyright (C) 2023 Marco Lo Monaco <info@marcolomonaco.com>
 ##
 ## This file is part of the statistics package for GNU Octave.
 ##
@@ -16,19 +17,20 @@
 ## this program; if not, see <http://www.gnu.org/licenses/>.
 
 ## -*- texinfo -*-
-## @deftypefn  {pkg-octave-doc} {} package_texi2html (@var{pkgname})
-## @deftypefnx {pkg-octave-doc} {[@var{pkgfcns}, @var{info}] =} package_texi2html (@var{pkgname})
+## @deftypefn  {pkg-octave-doc} {} package_texi2html (@var{pkgname_or_data})
+## @deftypefnx {pkg-octave-doc} {[@var{pkgfcns}, @var{info}] =} package_texi2html (@var{pkgname_or_data})
 ##
 ## Generate HTML pages for an entire package.
 ##
 ## @code{package_texi2html} takes a single input argument, @var{pkgname}, which
-## is a char string with the package's name whose HTML documentation need to be
-## generated.  The function considers the current working path as the root
+## can be a char string with the package's name whose HTML documentation need to be
+## generated or a @emph{structure with special meaning}.  The function considers 
+## the current working path as the root
 ## directory of the built pages.  It creates an @qcode{index.html} page with the
 ## available functions (and their subdivision into separate categories) of the
-## package according to its INDEX file.  Although the INDEX file (if absent) is
+## package according to its INDEX file or the structure content.  Although the INDEX file (if absent) is
 ## automatically generated during the package's installation, it is best
-## practice to include one in the package's source so there is full comtrol of
+## practice to include one in the package's source so there is full control of
 ## the categorization among the functions.  Individual functions HTML pages area
 ## generated with @code{function_texi2html}.
 ##
@@ -44,7 +46,7 @@
 ## generated without it.
 ##
 ## For the @code{package_texi2html} to work, the @qcode{texi2html} command line
-## tool, version 1.82, must be installed and available to the system's
+## tool, version 5.0, must be installed and available to the system's
 ## @code{$PATH}.
 ##
 ## Optionally, @code{package_texi2html} can return two output arguments, namely
@@ -65,7 +67,7 @@
 ##
 ## @itemize
 ## @item
-## @var{pkgfcns} is a Nx2 cell array containing the package's available
+## @var{pkgfcns} is a N@U{00D7}}2 cell array containing the package's available
 ## functions (1st column) and their respective category (2nd column).
 ##
 ## @item

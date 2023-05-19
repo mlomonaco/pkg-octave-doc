@@ -24,16 +24,10 @@ available for packages hosted at GitHub.
 
 ## Installation
 
-To install the latest version (0.5.0) you need Octave (>=7.2.0) installed on your system. You can install it by typing:
+To install this forked version you need Octave (>=8.2.0) and texi2html 5.0 installed (i.e. via `brew`) on your system. You can install it by typing:
 
 ```
-pkg install -forge pkg-octave-doc
-```
-
-To install the latest development version type:
-
-```
-pkg install "https://github.com/gnu-octave/pkg-octave-doc/archive/refs/heads/main.zip"
+pkg install "https://github.com/mlomonaco/pkg-octave-doc/archive/refs/heads/main.zip"
 ```
 
 ## Usage
@@ -53,10 +47,10 @@ If you wish to host the generated documentation on GitHub Pages, you need to cre
 
 You only need to do this once, and the package's website will be automatically updated every time you push a new commit into the package's `/docs` folder.
 
-## Guidelines for TEXIFNO docsstrings
+## Guidelines for TEXINFO docsstrings
 
 
-* `@qcode` is converted to `@code` before texi2html processing, so if you want to display a char string it is best to use @qcode{"somestring"}, which will be displayed properly both on Octave's command window and on HTML output. Keep in mind that `@code{}` encloses the content in single quotes in the command window, although they are not displayed in HTML code.
+* `@qcode` (a predefined texinfo macro which stands for _quoted code_) is converted to `@code` before texi2html processing, so if you want to display a char string it is best to use @qcode{"somestring"}, which will be displayed properly both on Octave's command window and on HTML output. Keep in mind that `@code{}` encloses the content in single quotes in the command window, although they are not displayed in HTML code.
 
 * fields of structures: it is best practice to write them as `@var{structure_name}.@qcode{field_name}` which appears in the command window as `structure_name.field_name` and in HTML as <var>structure_name</var>.<code>field_name</code>. In bootstrap 5, the `<code>` tag is not highlighted and it looks better than here :smiley:.
 
@@ -84,7 +78,9 @@ in .m files
 ## @deftypefn  {pkg-octave-doc} {} function_texi2html (@var{fcnname}, @var{pkgfcns}, @var{info})
 ##
 ````
-in .oct files
+Also make sure there is a space between the function name and the first parenthesis listing the parameters.
+
+In .oct files
 ````
 DEFUN_DLD (libsvmread, args, nargout,
            "-*- texinfo -*- \n\n\
@@ -94,11 +90,11 @@ DEFUN_DLD (libsvmread, args, nargout,
 This function ...
 ````
 
-* `@math{}` texi tags are converted to `<math></math>` tags in HTML and their contents are scanned for `x` and `*` characters, which are replaced by `&times;` in order to properly display the multiplication symbol. Make sure that lower case `x` within the `@math{}` tags is explicitly used for denoting multiplication and it is not used for anything else (e.g. variable name).  This feature, introduced in release 0.4.7, only affects the contents of `@math{}` texi tags. 
+* `@math{}` texi tags are **NOT** converted to `<math></math>` tags in HTML _as in the upstream repository_ (and their contents are not scanned for `x` and `*` characters, which would be replaced by `&times;`). This is because texi2html 5.0 converts `@math{}` to `<em>` and it would do the same replacement everytime you want italics highligthing in your text. In order to properly display the multiplication symbol simply use `@U{00D7}` or define a texinfo macro like `@times` for that. 
 
-* At the moment, `function_texi2html` can handle a signle `@seealso{}` tag. Make sure that there is only one `@seealso{}` tag inside each function's docstring located at the very end just before the `@end deftypefn` texinfo closing statement. Functions listed therein that belong to the same package are also linked to their individual function pages.
+* At the moment, `function_texi2html` can handle a single `@seealso{}` tag. Make sure that there is only one `@seealso{}` tag inside each function's docstring located at the very end just before the `@end deftypefn` texinfo closing statement. Functions listed therein that belong to the same package are also linked to their individual function pages.
 
-* `@tex` tags must only contain latex mathematical expressions enclosed with `$$` identifiers, such as in `$$ ... $$`. Math delimiters `\(...\)` are also processed in `@tex` blocks.
+* `@tex` tags must only contain latex mathematical expressions enclosed with `$$` identifiers, such as in `$$ ... $$`. Math delimiters `\(...\)` are also processed in `@tex` blocks. The best way to do that, though, is to split with a `@ifnotinfo` directive and place regular plain text math when not producing HTML output.
 
 ## TODO
 
@@ -110,6 +106,6 @@ Octave core functions.
 
 ## Further notes
 
-Albeit completely overhauled, this is a fork of the
+Albeit completely overhauled, the upstream repository is a fork of the
 [generate_html](https://packages.octave.org/generate_html) package previously
 used for Source Forge reference pages.
